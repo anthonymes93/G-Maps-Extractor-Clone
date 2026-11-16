@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Maps Listing Collector",
+  "version": "1.0.0",
+  "description": "Collect visible Google Maps search listings and export them to CSV.",
+  "permissions": ["activeTab", "scripting", "storage", "downloads"],
+  "host_permissions": ["https://www.google.com/maps/*", "https://www.google.ca/maps/*"],
+  "action": {"default_popup": "popup.html"},
+  "content_scripts": [{"matches": ["https://www.google.com/maps/*", "https://www.google.ca/maps/*"], "js": ["content.js"], "run_at": "document_idle"}]
+}
