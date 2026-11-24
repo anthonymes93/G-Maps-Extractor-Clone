@@ -9,6 +9,7 @@ async function send(type) {
 async function refresh(){ const state=await send('status'); if(state)status.textContent=`${state.active?'Collecting':'Paused'} · ${state.count} listings collected`; }
 document.getElementById('start').onclick=async()=>{await send('start');refresh()};
 document.getElementById('stop').onclick=async()=>{await send('stop');refresh()};
+document.getElementById('reset').onclick=async()=>{if(!confirm('Discard all currently collected listings and stop scraping?'))return; const result=await send('reset'); if(result?.ok) await refresh(); else if(result) status.textContent='Could not clear listings. Try again.';};
 document.getElementById('export').onclick=async()=>{
   const {mapsCollectorV1:data} = await chrome.storage.local.get(KEY);
   if (!data?.entries?.length){status.textContent='No listings collected yet.';return;}
