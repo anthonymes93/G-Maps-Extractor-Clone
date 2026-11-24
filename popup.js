@@ -2,11 +2,12 @@ const status = document.getElementById('status');
 const KEY = 'mapsCollectorV1';
 async function send(type) {
   const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
-  if (!tab?.url || !/^https:\/\/www\.google\.(com|ca)\/maps/.test(tab.url)) {status.textContent='Open a Google Maps search tab first.';return null;}
+  if (!tab?.url || !/^https:\/\/www\.google\.(com|ca)\/maps/.test(tab.url)) {await refresh(); status.textContent+=' · Open Google Maps to control scraping.';return null;}
   try { return await chrome.tabs.sendMessage(tab.id,{type}); }
-  catch { status.textContent='Refresh the Google Maps tab and try again.';return null; }
+  catch { await refresh(); status.textContent+=' · Refresh Google Maps to control scraping.';return null; }
 }
-async function refresh(){ const state=await send('status'); if(state)status.textContent=`${state.active?'Collecting':'Paused'} · ${state.count} listings collected`; }
+async function refresh(){ const data=(await chrome.storage.local.get(KEY))[KEY]; status.textContent=`${data?.active?'Collecting':'Paused'} · ${data?.entries?.length || 0} listings collected`; }
+chrome.storage.onChanged.addListener((changes,area)=>{if(area==='local' && changes[KEY]) refresh();});
 document.getElementById('start').onclick=async()=>{await send('start');refresh()};
 document.getElementById('stop').onclick=async()=>{await send('stop');refresh()};
 document.getElementById('reset').onclick=async()=>{if(!confirm('Discard all currently collected listings and stop scraping?'))return; const result=await send('reset'); if(result?.ok) await refresh(); else if(result) status.textContent='Could not clear listings. Try again.';};
