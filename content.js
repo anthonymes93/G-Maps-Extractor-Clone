@@ -5,9 +5,19 @@
   let active = false, entries = new Map(), observer, interval;
   const getQuery = () => new URL(location.href).searchParams.get('q') || document.querySelector('input#searchboxinput')?.value || '';
   const normalize = (url) => { try { const u = new URL(url, location.origin); return u.origin + u.pathname; } catch { return url; } };
-  const persist = () => chrome.storage.local.set({[KEY]: {active, query: getQuery(), entries: [...entries.values()], updated: new Date().toISOString()}});
+  const shutdown = () => { active = false; observer?.disconnect(); clearInterval(interval); clearTimeout(window.__mapsCollectorDebounce); };
+  const persist = async () => {
+    try {
+      if (!chrome.runtime?.id) { shutdown(); return; }
+      await chrome.storage.local.set({[KEY]: {active, query: getQuery(), entries: [...entries.values()], updated: new Date().toISOString()}});
+    } catch (error) {
+      if (!chrome.runtime?.id || /context invalidated/i.test(String(error))) shutdown();
+      else console.warn('Maps collector storage error', error);
+    }
+  };
   const collect = () => {
     if (!active) return;
+    if (!chrome.runtime?.id) { shutdown(); return; }
     document.querySelectorAll('a[href*="/maps/place/"]').forEach(a => {
       const card = a.closest('[role="article"]') || a.closest('.Nv2PK');
       if (!card) return;
