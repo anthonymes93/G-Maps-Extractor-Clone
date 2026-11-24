@@ -37,7 +37,7 @@
     if (message.type === 'start') { active = true; collect(); respond({ok:true,count:entries.size}); }
     else if (message.type === 'stop') { active = false; persist(); respond({ok:true,count:entries.size}); }
     else if (message.type === 'status') respond({ok:true,active,count:entries.size,query:getQuery()});
-    else if (message.type === 'reset') { entries.clear(); persist(); respond({ok:true,count:0}); }
+    else if (message.type === 'reset') { active = false; clearTimeout(window.__mapsCollectorDebounce); entries.clear(); chrome.storage.local.set({[KEY]: {active:false, query:getQuery(), entries:[], updated:new Date().toISOString()}}, () => respond({ok:!chrome.runtime.lastError,count:0})); return true; }
     return false;
   });
 })();
