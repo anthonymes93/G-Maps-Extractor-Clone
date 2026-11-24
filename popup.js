@@ -1,7 +1,7 @@
 const status = document.getElementById('status');
 const KEY = 'mapsCollectorV1';
-let timer, lastCount = 0, lastActive = false;
-function render(note='') { status.textContent = `${lastActive?'Collecting':'Paused'} · ${lastCount} listings collected${note?' · '+note:''}`; }
+let timer, lastCount = 0, lastQualified = 0, lastActive = false;
+function render(note='') { status.style.whiteSpace='pre-line'; status.textContent = `${lastActive?'Collecting':'Paused'} · ${lastCount} listings collected\n${lastQualified} with phone, no website${note?' · '+note:''}`; }
 function handleError(error) { if (!chrome.runtime?.id || /context invalidated/i.test(String(error))) { clearInterval(timer); render('Reopen widget after extension reload'); } else render('Extension unavailable; retry'); }
 async function send(type) {
   try {
@@ -10,7 +10,7 @@ async function send(type) {
   return await chrome.tabs.sendMessage(tab.id,{type});
   } catch(error) { handleError(error); return null; }
 }
-async function refresh(){ try { const data=(await chrome.storage.local.get(KEY))[KEY]; lastCount=data?.entries?.length || 0; lastActive=!!data?.active; render(); } catch(error) { handleError(error); } }
+async function refresh(){ try { const data=(await chrome.storage.local.get(KEY))[KEY]; const entries=Array.isArray(data?.entries)?data.entries:[]; lastCount=entries.length; lastQualified=entries.filter(entry=>String(entry.phone??'').trim() && !String(entry.website??'').trim()).length; lastActive=!!data?.active; render(); } catch(error) { handleError(error); } }
 chrome.storage.onChanged.addListener((changes,area)=>{if(area==='local' && changes[KEY]) refresh();});
 document.getElementById('start').onclick=async()=>{await send('start');refresh()};
 document.getElementById('stop').onclick=async()=>{await send('stop');refresh()};
